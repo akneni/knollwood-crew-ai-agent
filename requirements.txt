@@ -1,0 +1,7 @@
+crewai
+crewai-tools
+langchain-groq
+google-generativeai
+streamlit
+gradio
+python-dotenv

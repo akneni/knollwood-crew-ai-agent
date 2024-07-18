@@ -1,7 +1,20 @@
+import sys
+
+# Handle cli arguments and display help message before importing
+# all other dependencies (as this takes a while)
+cli_arg = '--gui' if len(sys.argv) < 2 else sys.argv[1]
+if cli_arg not in ['--gui', '--cli']:
+    with open('./docs/cli-usage.md', 'r') as f:
+        text = f.read()
+        print(text)
+        exit()
+
+
 from crewai import Agent, Task, Crew
 from crewai_tools import (
     FileReadTool,
     WebsiteSearchTool,
+    DirectoryReadTool,
 )
 from crewai_tools import tools
 from langchain_groq import ChatGroq
@@ -9,46 +22,65 @@ from secret import GROQ_APIKEY, GEMINI_APIKEY
 import os
 import tools 
 import utils
-import streamlit as st
+import agents
 import gradio as gr
 import shutil
 import tempfile
+import atexit
+import constants
 
 # Create a temporary directory to store uploaded files
-DATAROOM_PATH = tempfile.mkdtemp()
-print(f"Temporary upload directory: {DATAROOM_PATH}")
+
+WORKING_DIR = tempfile.mkdtemp()
+OUTPUTS_PATH = os.path.join(WORKING_DIR, "outputs")
+OUTPUTS_PATH = "./outputs"
+
+# DATAROOM_PATH = os.path.join(WORKING_DIR, "./dataroom") if cli_arg == '--gui' else input("Enter the filepath to your dataroom: ")
+DATAROOM_PATH = os.path.join(WORKING_DIR, "dataroom") if cli_arg == '--gui' else "/home/aknen/MEGA/Knollwood/Projects/crew-ai/dataroom/"
+# Create sub directories
+for path in [DATAROOM_PATH, OUTPUTS_PATH]:
+    if not os.path.exists(path):
+        os.mkdir(path)
+
+print(f"Reading dataroom from: {DATAROOM_PATH}")
 
 def start_crew():
+    # llm = utils.gen_llm(GROQ_APIKEY, model="Mixtral-8x7b-32768")
     llm = utils.gen_llm(GEMINI_APIKEY)
 
-    agent = Agent(
-        role="You are an investment analyst at a Venture Capital firm. Your job is to research and write screening memos for different VC funds.",
-        goal="Complete any task given to you as effectivley as possible. Note, not everything will be provided in the dataroom. If this is the case, try to answer frmo your own training data. If any of your tools produce an error as an output, do not retry that actions with the same input. They will produce the same error output and it will be a waste of resorurces.",
-        backstory=f"You are an extremely intelegent and hard worker. You also have access ot a dataroom. Here are some files in data dataroom: f{os.listdir('./dataroom')}",
-        llm=llm,
-        verbose=True,
-        rate_limit=5,
-        tools=[ 
-            tools.create_dataroom_tool(DATAROOM_PATH)(),
-        ],
-    )
+    agent_set = []
+    tasks = []
 
-    task = Task (
-        description="Do a write up about ASML's financials and moat.",
-        expected_output="ASML is a lithography comany ...",
-        agent=agent,
-    )
+    for section, agent_pair in agents.create_crew(llm, 'CyberStarts Opportunity Fund', DATAROOM_PATH, OUTPUTS_PATH, constants.SECTIONS):
+        r_task = Task (
+            description=f"Gather data about the {section} section from the data room or your own training data.",
+            expected_output=f"Your output should be notes in markdown about the {section} section.",
+            agent=agent_pair['researcher'],
+        )
+
+        w_task = Task (
+            description=f"Using the data that your researcher gathered, fill in the {section} section of the screening memo.",
+            expected_output=f"Your output should be information about your section that would be helpful for making an investment decision.",
+            agent=agent_pair['writer'],
+        )
+        tasks.append(r_task)
+        tasks.append(w_task)
+        agent_set.append(agent_pair['researcher'])
+        agent_set.append(agent_pair['writer'])
 
     crew = Crew(
-        agents=[agent],
-        tasks=[task],
+        agents=agent_set,
+        tasks=tasks,
         verbose=2,
     )
 
     result = crew.kickoff()
     print(result)
 
-def process_files(files):
+    utils.build_word_doc(OUTPUTS_PATH)
+    return os.path.join(OUTPUTS_PATH, "screening-memo.docx")
+
+def handle_gradio(files):
     """
     Process uploaded files and return a file for download.
     """
@@ -63,43 +95,46 @@ def process_files(files):
         saved_paths.append(file_path)
     
     print(f"Saved {len(saved_paths)} files.")
-    if os.path.exists("output.docx"):
-        os.remove("output.docx")
-    shutil.copyfile("./templates/TEMPLATE FUND Screening Memo.docx", "output.docx")
 
-    start_crew()
+    out_path = start_crew()
 
-    return 'output.docx'
+    return out_path
 
-# Define the Gradio interface
-with gr.Blocks() as demo:
-    gr.Markdown("# File Processor")
-    
+# Define the Gradio interface favicon="./icon/knollwood-icon.jpeg"
+with gr.Blocks(title="Knollwood Internal") as demo:
+    gr.Markdown("# Funds Screening Memo Writer")    
+
     with gr.Row():
         input_files = gr.File(label="Upload your files", file_count="multiple")
         output_file = gr.File(label="Processed file")
     
-    process_btn = gr.Button("Process Files")
-    process_btn.click(fn=process_files, inputs=input_files, outputs=output_file)
+    process_btn = gr.Button("Run AI Crew")
+    process_btn.click(fn=handle_gradio, inputs=input_files, outputs=output_file)
 
     gr.Markdown("""
     ## Instructions
     1. Upload one or more files using the file uploader.
-    2. Click the "Process Files" button.
-    3. The processed file will appear in the output section, ready for download.
+    2. Click the "Run AI Crew" button.
+    3. The screening memo will appear in the output section, ready for download.
     """)
+
+# Cleanup function to remove temporary directory when the script exits
+def cleanup():
+    print(f"Cleaning up temporary directory: {DATAROOM_PATH}")
+    shutil.rmtree(DATAROOM_PATH)
 
 # Launch the app
 if __name__ == "__main__":
-    # Cleanup function to remove temporary directory when the script exits
-    def cleanup():
-        print(f"Cleaning up temporary directory: {DATAROOM_PATH}")
-        shutil.rmtree(DATAROOM_PATH)
+    shelve_path = os.path.join(OUTPUTS_PATH, "shelve-db")
+    if os.path.exists(shelve_path):
+        shutil.rmtree(shelve_path)
+    os.mkdir(shelve_path)
 
-    # Register the cleanup function
-    import atexit
-    atexit.register(cleanup)
+    # Handle gui
+    if cli_arg == '--gui':
+        atexit.register(cleanup)
+        demo.launch()
 
-    # Launch the Gradio interface
-    demo.launch()
-
+    # Handle CLI
+    elif cli_arg == '--cli':
+        start_crew()

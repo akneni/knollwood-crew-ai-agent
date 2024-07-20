@@ -35,7 +35,7 @@ def add_to_screening_memo(section: str, data: str) -> str:
     with shelve.open("./outputs/shelve-db/db") as db:
         if db.get(section) is None:
             db[section] = data
-            return
+            return "Operation successful!"
         db[section] = db[section] + "<[SEP]>" + data
     return "Operation successful!"
     

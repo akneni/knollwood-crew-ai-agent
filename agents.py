@@ -8,7 +8,7 @@ import functools
 def fetch_template(agent_type: str):
     if agent_type not in ['researcher', 'writer']:
         raise ValueError(f"argument `agent_type` must be one of ['writer', 'researcher'], received: {agent_type}")
-    with open('./templates/prompt-templates.json', 'r') as f:
+    with open('./templates/agent-templates.json', 'r') as f:
         prompts = json.load(f)
     return prompts[agent_type]
 
@@ -59,8 +59,9 @@ def create_crew(llm, fund_name: str, dataroom_path: str, output_path: str, secti
     agent_dict = {}
     
     for section in sections:
+        section = section.strip("<[]>")
         researcher = create_agent(llm, fund_name, dataroom_path, output_path, section, 'researcher')
-        writer = create_agent(llm, dataroom_path, output_path, section, 'writer')
+        writer = create_agent(llm, fund_name, dataroom_path, output_path, section, 'writer')
         agent_dict[section] = {
             'researcher': researcher,
             'writer': writer,

@@ -1,0 +1,153 @@
+[
+    {
+        "section": "<[Year Founded]>",
+        "special_instructions": "Fill in this section. This section should contain the year that the venture capital fund was founded.",
+        "expected_output": "This section should be a year and should only contain 4 digits."
+    },
+    {
+        "section": "<[City State]>",
+        "special_instructions": "Fill in this section. This section should contain the city and state that the venture capital firm is founded in.",
+        "expected_output": "The city and state should be separated by a comma. Ex) San Francisco, California"
+    },
+    {
+        "section": "<[AUM]>",
+        "special_instructions": "Fill in this field. This field refers to the assets under management of the entire VC firm (not just this specific fund). It's likely that this number will not be in the dataroom; if so, simply write `UNKNOWN` to this section",
+        "expected_output": "This should be either `UNKNOWN` or a single figure with a `$` in front of it. You should also use a M or a B at the end to indicate that the number is in millions or billions Ex) $12.4B."
+    },
+    {
+        "section": "<[Manager Type: New/Existing]>",
+        "special_instructions": "Fill in this section. This section refers to whether or not the manager of this VC fund is a new manager or existing one (meaning that they have managed other funds before). The data for this may not be in the data room. If so, fill this section in with `UNKNOWN`.",
+        "expected_output": "One of the following: (New/Existing/UNKNOWN)"
+    },
+    {
+        "section": "<[Original Source]>",
+        "special_instructions": "Fill in this section. This section should contain the original source Knollwood got this lead from. If this information is not available in the data room, fill this section in with `UNKNOWN`.",
+        "expected_output": "This should either be `UNKNOWN`, or one or more names. If there are multiple names, you should separate them with commas and add no additional text."
+    },
+    {
+        "section": "<[Firm Overview]>",
+        "special_instructions": "Fill in this section. This section is meant to be a general overview of the VC firm. Try to keep this section to 1 or 2 paragraphs.",
+        "expected_output": "A description of the entire VC firm in plain text in paragraph form. Ex) 'CyberStarts (the 'firm') is a ...'"
+    },
+    {
+        "section": "<[Fundraise Summary & Timing]>",
+        "special_instructions": "Fill in this section. This section should contain data about when this fund was created, when it started raising funding, and if/when it made it's first investment (it likely will not have made its first investment yet).",
+        "expected_output": "Some plain text in paragraph form."
+    },
+    {
+        "section": "<[Diligence Items]>",
+        "special_instructions": "Fill in this section. This section should contain questions the Knollwood team should ask the fund managers to learn more about this fund. These questions should be tailored to determining if this fund would good to invest in.",
+        "expected_output": "This should be bullet points in plain text (other than the bullet points, don't use any additional markdown formatting)."
+    },
+    {
+        "section": "<[Conclusions]>",
+        "special_instructions": "Fill in this section. This section should contain data about your conclusions about this fund. You may want to read some other sections of the memo before writing out all your conclusions. These conclusions will take the format of a list of pros and cons",
+        "expected_output": "These should be bullet points, and each bullet point should have a plus or minus sign, a phrase describing the pro/con, and then a paragraph describing the pro/con. Ex) `- (+) Previous Track Record: VC fund XXX has a strong track record investing in cybersecurity firms, ...` Ex) `- (-) Competitive AI funding: This fund invests heavily in AI, which is currently a very competitive area for venture capital.`"
+    },
+    {
+        "section": "<[Overview]>",
+        "special_instructions": "Fill in this section. This section should contain an overview of the firm's investment strategy. If available, include data about which geographies and sectors the fund aims to invest in. Also try to include info about which stage the fund aims to invest in (early/growth/late/multi-stage/etc)",
+        "expected_output": "This should be one or more paragraphs in plain text."
+    },
+    {
+        "section": "<[Market Opportunity]>",
+        "special_instructions": "skip for now",
+        "expected_output": "This should be one or more paragraphs in plain text."
+    },
+    {
+        "section": "<[Differentiation & Winning Deals]>",
+        "special_instructions": "Fill in this section. This section should contain info about how this vc firm differentiates itself from the rest. It should also contain data about some of this VC firm's best prior investments.",
+        "expected_output": "This should be one or more paragraphs in plain text."
+    },
+    {
+        "section": "<[Sourcing & Picking Deals]>",
+        "special_instructions": "Fill in this section. This section should contain info about how this VC firm sources deals and chooses which of them to invest in.",
+        "expected_output": "This should be in one or more paragraphs in plan text."
+    },
+    {
+        "section": "<[Post-Investment]>",
+        "special_instructions": "Fill in this section. This section should contain info about how the managers of this VC fund handle post investment. Aka, how does this fund continue to add value to their portfolio companies after they've already invested?",
+        "expected_output": "One or more paragraphs in plain text."
+    },
+    {
+        "section": "<[Exiting Deals]>",
+        "special_instructions": "Fill in this section. This section should contain info about the firm's most successful investments that have already exited (either by getting acquired or by going public).",
+        "expected_output": "One or more paragraphs in plain text. If there are no exits, then fill this section in with `N/A`"
+
+    },
+    {
+        "section": "<[Portfolio Construction - Geography]>",
+        "special_instructions": "Fill in this section. This section should contain info about which geographies the fund is looking to invest in.",
+        "expected_output": "A short list of geographies; not a full sentence. Ex) `Primarily US` or `US & Europe`"
+    },
+    {
+        "section": "<[Portfolio Construction - number of companies]>",
+        "special_instructions": "Fill in this section. This section should contain the number of companies that this firm looks to invest in.",
+        "expected_output": "A number or range, not a full sentence. Ex) `Roughly 20` or `25-35`"
+    },
+    {
+        "section": "<[Portfolio Construction - initial investment]>",
+        "special_instructions": "Fill in this section. This section should contain info about this fund's typical initial investments for several different scenarios: Lead, Co-Lead, and Participatory (leading/co-leading a funding round or participating in a funding round). If you can't find data on a scenario, leave that one out.",
+        "expected_output": "Not a full sentence. Ex) `Lead Checks $4M avg; Co-Lead Checks $1M avg; Participatory Checks $500K avg` Enter `UNKNOWN` if you can't find any data about this."
+    },
+    {
+        "section": "<[Portfolio Construction - Total Investment]>",
+        "special_instructions": "skip this section for now",
+        "expected_output": ""
+    },
+    {
+        "section": "<[Portfolio Construction - Ownership Strategy]>",
+        "special_instructions": "Fill in this section. This section should contain info about the percentage ownership this fund will try to get in three different scenarios: Lead, Co-Lead, and Participatory (leading/co-leading a funding round or participating in a funding round).",
+        "expected_output": "Not a full sentence. Ex) `Lead Checks 15-20%; Co-Lead Checks 5-10%; Participatory Checks 2-5%` Enter `UNKNOWN` if you can't find any data about this."
+    },
+    {
+        "section": "<[Portfolio Construction - Entry Round]>",
+        "special_instructions": "Fill in this section. This section should contain info about which funding stage this fund likes to make their fist investment in a firm.",
+        "expected_output": "This should be one or two word. Most of the time, it should be one of the following (pre-seed/seed/Series A/Series B...)"
+    },
+    {
+        "section": "<[Portfolio Construction - Reserve Strategy]>",
+        "special_instructions": "skip for now",
+        "expected_output": ""
+    },
+    {
+        "section": "<[Portfolio Construction - Board Seats]>",
+        "special_instructions": "skip for now",
+        "expected_output": ""
+    },
+    {
+        "section": "<[Initial Portfolio Investments]>",
+        "special_instructions": "skip for now",
+        "expected_output": ""
+    },
+    {
+        "section": "<[Prior Track Record]>",
+        "special_instructions": "Fill in this section. This section should contain data about the VC firm's prior track record. What was the IRR on some of their more mature funds? What is their TVPI on some of their more recent funds?",
+        "expected_output": "One or more paragraphs in plain text."
+    },
+    {
+        "section": "<[Similar Fund Managers]>",
+        "special_instructions": "skip for now",
+        "expected_output": ""
+    },
+    {
+        "section": "<[Fund Team]>",
+        "special_instructions": "Fill in this section. This section should contain info about the team leading this fund. Try to highlight, previous founding, investment, or work experience.",
+        "expected_output": "There should be multiple sections for each person. Stick to the following template: `NAME, POSITION -  description and professional history`. Here is an example: `Anne Lee Skates, Founder & General Partner - Before launching Parable, Anne was a partner at Andreessen Horowitz ...`"
+    },
+    {
+        "section": "<[Co-Investment Views]>",
+        "special_instructions": "Fill in this section. This section should contain info about how this fund usually lets its LPs co-invest. Do they share their excess pro-rata? Do they use SPVs? Or do they do something different?",
+        "expected_output": "One or more paragraphs in plain text."
+    },
+    {
+        "section": "<[KWI Portfolio Overlap]>",
+        "special_instructions": "skip for now",
+        "expected_output": ""
+    },
+    {
+        "section": "<[Network Reference Points]>",
+        "special_instructions": "skip for now",
+        "expected_output": ""
+    }
+]

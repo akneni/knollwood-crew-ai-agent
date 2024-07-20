@@ -10,7 +10,7 @@ if cli_arg not in ['--gui', '--cli']:
         exit()
 
 
-from crewai import Agent, Task, Crew
+from crewai import Agent, Task, Crew, Process
 from crewai_tools import (
     FileReadTool,
     WebsiteSearchTool,
@@ -25,69 +25,63 @@ import utils
 import agents
 import gradio as gr
 import shutil
-import tempfile
+from pprint import pprint
 import atexit
 import constants
+from agent_int import KwiAgent, KwiTask
 
-# Create a temporary directory to store uploaded files
 
-WORKING_DIR = tempfile.mkdtemp()
-OUTPUTS_PATH = os.path.join(WORKING_DIR, "outputs")
-OUTPUTS_PATH = "./outputs"
-
-# DATAROOM_PATH = os.path.join(WORKING_DIR, "./dataroom") if cli_arg == '--gui' else input("Enter the filepath to your dataroom: ")
-DATAROOM_PATH = os.path.join(WORKING_DIR, "dataroom") if cli_arg == '--gui' else "/home/aknen/MEGA/Knollwood/Projects/crew-ai/dataroom/"
-# Create sub directories
-for path in [DATAROOM_PATH, OUTPUTS_PATH]:
-    if not os.path.exists(path):
-        os.mkdir(path)
-
-print(f"Reading dataroom from: {DATAROOM_PATH}")
-
-def start_crew():
+def start_crew(fund_name):
     # llm = utils.gen_llm(GROQ_APIKEY, model="Mixtral-8x7b-32768")
     llm = utils.gen_llm(GEMINI_APIKEY)
 
+    kwi_agent_set: list[KwiAgent] = KwiAgent.from_json('./templates/agent-templates.json', fund_name)
+    kwi_task_set: list[KwiTask] = KwiTask.from_json('./templates/task-templates.json')
+
+    # Ensure that all tags are assigned to one agent
+    tags = KwiAgent.extract_tags(kwi_agent_set)
+    if len((diff := (set(i.section for i in kwi_task_set)) - set(tags))):
+        print(f"WARNING -> UNASSIGNED TAGS:")
+        pprint(diff)
+        exit(0)
+
+    task_set = []
     agent_set = []
-    tasks = []
-
-    for section, agent_pair in agents.create_crew(llm, 'CyberStarts Opportunity Fund', DATAROOM_PATH, OUTPUTS_PATH, constants.SECTIONS):
-        r_task = Task (
-            description=f"Gather data about the {section} section from the data room or your own training data.",
-            expected_output=f"Your output should be notes in markdown about the {section} section.",
-            agent=agent_pair['researcher'],
-        )
-
-        w_task = Task (
-            description=f"Using the data that your researcher gathered, fill in the {section} section of the screening memo.",
-            expected_output=f"Your output should be information about your section that would be helpful for making an investment decision.",
-            agent=agent_pair['writer'],
-        )
-        tasks.append(r_task)
-        tasks.append(w_task)
-        agent_set.append(agent_pair['researcher'])
-        agent_set.append(agent_pair['writer'])
+    for t in kwi_task_set:
+        a = t.select_agent(kwi_agent_set)
+        agent_set.append(a.get_writer(llm))
+        task_set.append(Task(
+            **t.into_writer(),
+            agent=agent_set[-1],
+        ))
+        agent_set.append(a.get_researcher(llm))
+        task_set.append(Task(
+            **t.into_researcher(),
+            agent=agent_set[-1],
+        ))
 
     crew = Crew(
         agents=agent_set,
-        tasks=tasks,
-        verbose=2,
+        tasks=task_set,
+        verbose=True,
+        # process=Process.hierarchical,
+        # manager_llm=llm,
     )
 
     result = crew.kickoff()
     print(result)
 
-    utils.build_word_doc(OUTPUTS_PATH)
-    return os.path.join(OUTPUTS_PATH, "screening-memo.docx")
+    utils.build_word_doc("./outputs", fund_name)
+    return os.path.join("./outputs", "screening-memo.docx")
 
-def handle_gradio(files):
+def handle_gradio(files, fund_name):
     """
     Process uploaded files and return a file for download.
     """
     # Save uploaded files
     saved_paths = []
     for file in files:
-        file_path = os.path.join(DATAROOM_PATH, file.name)
+        file_path = os.path.join("./dataroom", file.name)
         try:
             shutil.copyfile(file.name, file_path)
         except shutil.SameFileError:
@@ -96,20 +90,25 @@ def handle_gradio(files):
     
     print(f"Saved {len(saved_paths)} files.")
 
-    out_path = start_crew()
+    out_path = start_crew(fund_name)
 
     return out_path
+
+def read_logs():
+    with open("output-file.log", "r") as f:
+        return f.read()
 
 # Define the Gradio interface favicon="./icon/knollwood-icon.jpeg"
 with gr.Blocks(title="Knollwood Internal") as demo:
     gr.Markdown("# Funds Screening Memo Writer")    
 
+    fund_name = gr.Text("Fund Name: ")
     with gr.Row():
         input_files = gr.File(label="Upload your files", file_count="multiple")
         output_file = gr.File(label="Processed file")
     
     process_btn = gr.Button("Run AI Crew")
-    process_btn.click(fn=handle_gradio, inputs=input_files, outputs=output_file)
+    process_btn.click(fn=handle_gradio, inputs=[input_files, fund_name], outputs=output_file)
 
     gr.Markdown("""
     ## Instructions
@@ -118,17 +117,27 @@ with gr.Blocks(title="Knollwood Internal") as demo:
     3. The screening memo will appear in the output section, ready for download.
     """)
 
+    logs = gr.Textbox(label="Model Thoughts")
+    demo.load(read_logs, None, logs, every=1)
+
+
+
 # Cleanup function to remove temporary directory when the script exits
 def cleanup():
-    print(f"Cleaning up temporary directory: {DATAROOM_PATH}")
-    shutil.rmtree(DATAROOM_PATH)
+    for filepath in os.listdir('./dataroom'):
+        filepath = os.path.join('./dataroom', filepath)
+        if os.path.isfile(filepath):
+            os.remove(filepath)
+        elif os.path.isdir(filepath):
+            shutil.rmtree(filepath)
 
 # Launch the app
 if __name__ == "__main__":
-    shelve_path = os.path.join(OUTPUTS_PATH, "shelve-db")
+    shelve_path = "./outputs/shelve-db"
     if os.path.exists(shelve_path):
         shutil.rmtree(shelve_path)
-    os.mkdir(shelve_path)
+    if not os.path.exists(shelve_path):
+        os.mkdir(shelve_path)
 
     # Handle gui
     if cli_arg == '--gui':
@@ -137,4 +146,18 @@ if __name__ == "__main__":
 
     # Handle CLI
     elif cli_arg == '--cli':
-        start_crew()
+        dataroom_dir = input("Enter the path to your dataroom: ")
+        fund_name = input("Enter the fund name: ")
+
+        for path in os.listdir(dataroom_dir):
+            src = os.path.join(dataroom_dir, path)
+            dst = os.path.join("./dataroom", path)
+            try:
+                if os.path.isfile(src):
+                    shutil.copyfile(src, dst)
+                elif os.path.isdir(src):
+                    shutil.copytree(src, dst)
+            except shutil.SameFileError:
+                pass
+
+        start_crew(fund_name)

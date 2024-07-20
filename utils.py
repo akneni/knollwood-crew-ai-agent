@@ -36,7 +36,7 @@ def gen_llm(apikey: str, provider: Optional[LlmProvider] = None, model: str = No
             api_key=GROQ_APIKEY
         )
     elif provider == LlmProvider.GOOGLE_GEMINI:
-        model = model if model is not None else 'gemini-1.5-flash'
+        model = model if model is not None else 'gemini-1.5-pro'
         return ChatGoogleGenerativeAI(
             model=model,
             verbose=True,
@@ -49,12 +49,15 @@ def gen_llm(apikey: str, provider: Optional[LlmProvider] = None, model: str = No
         openai.api_key = apikey
         return openai
 
-def build_word_doc(output_dir):
+def build_word_doc(output_dir, fund_name: str = None):
     screening_mem_out = os.path.join(output_dir, 'screening-memo.docx')
     with shelve.open(os.path.join(output_dir, "shelve-db/db")) as db:
         shutil.copyfile('./templates/TEMPLATE FUND Screening Memo.docx', screening_mem_out)
 
         d = {k:format_section(v.split('<[SEP]>')) for k,v in db.items()}
+        if fund_name is not None:
+            d['[[Fund Name]]'] = fund_name
+        
         find_replace_in_document(
             "./templates/TEMPLATE FUND Screening Memo.docx",
             d,
